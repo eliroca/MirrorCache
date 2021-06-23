@@ -35,3 +35,16 @@ setup_system_db:
 setup_production_assets:
 	cd "${DESTDIR}"/usr/share/mirrorcache/ && \
 	    MOJO_MODE=production ${mkfile_path}/tools/generate-packed-assets
+
+.PHONY: check-js-beautify
+check-js-beautify:
+	@which js-beautify >/dev/null 2>&1 || (echo "Command 'js-beautify' not found, can not execute JavaScript beautifier" && false)
+
+.PHONY: tidy-js
+tidy-js: check-js-beautify
+	@# Fall back to find if there is no git, e.g. in package builds
+	for i in $$(git ls-files "*.js" 2>/dev/null || find assets/javascripts/ -name '*.js'); do js-beautify ${JSBEAUTIFIER_OPTS} $$i > $$i.new; mv $$i.new $$i; done
+
+.PHONY: tidy
+tidy: tidy-js
+	tools/tidy
